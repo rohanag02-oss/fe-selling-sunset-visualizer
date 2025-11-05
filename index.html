@@ -224,6 +224,29 @@
             stroke-width: 4px !important;
         }
 
+        .link-emoji {
+            font-size: 16px;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .node-highlighted circle {
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)) !important;
+            stroke-width: 5px !important;
+            stroke: rgba(255, 215, 0, 0.8) !important;
+        }
+
+        .link-highlighted {
+            stroke-width: 5px !important;
+            stroke-opacity: 1 !important;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .link-hover {
+            pointer-events: stroke;
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -444,8 +467,10 @@
                     <span>💕 Romantic</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-line" style="background: #FFC107;"></div>
-                    <span>🤔 Complicated</span>
+                    <svg width="40" height="3" style="display: block;">
+                        <line x1="0" y1="1.5" x2="40" y2="1.5" stroke="#FFC107" stroke-width="3" stroke-dasharray="5,5"/>
+                    </svg>
+                    <span>🤔 Complicated (Dotted)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-circle" style="border-color: #9C27B0; border-width: 4px;"></div>
@@ -1088,16 +1113,73 @@
                     return centerCharacter ? 150 : 200; // Tighter circle if there's a center
                 }, width / 2, height / 2).strength(centerCharacter ? 0.1 : 0.05));
 
-            // Create links
-            const link = g.append('g')
-                .selectAll('line')
+            // Create link group container
+            const linkGroup = g.append('g')
+                .selectAll('g')
                 .data(links)
                 .enter()
-                .append('line')
+                .append('g')
+                .attr('class', 'link-group')
+                .style('cursor', 'pointer');
+
+            // Create invisible wide line for better hover detection
+            const linkHover = linkGroup.append('line')
+                .attr('class', 'link-hover')
+                .attr('stroke', 'transparent')
+                .attr('stroke-width', 15)
+                .style('pointer-events', 'stroke');
+
+            // Create links
+            const link = linkGroup.append('line')
                 .attr('class', 'link')
                 .attr('stroke', d => relationshipColors[d.type])
                 .attr('stroke-width', d => d.type === 'enemies' ? 3 : 2)
-                .attr('stroke-dasharray', d => d.type === 'complicated' ? '5,5' : '0');
+                .attr('stroke-dasharray', d => d.type === 'complicated' ? '5,5' : '0')
+                .style('pointer-events', 'none');
+
+            // Add emoji labels on links
+            const linkEmojiMap = {
+                friends: '👭',
+                enemies: '⚔️',
+                romantic: '💕',
+                complicated: '🤔'
+            };
+
+            const linkEmoji = linkGroup.append('text')
+                .attr('class', 'link-emoji')
+                .text(d => linkEmojiMap[d.type] || '');
+
+            // Add hover effects to links
+            linkGroup.on('mouseover', function(event, d) {
+                // Highlight the visible link
+                d3.select(this).select('line.link').classed('link-highlighted', true);
+                
+                // Highlight connected nodes
+                node.each(function(nodeData) {
+                    if (nodeData.id === d.source.id || nodeData.id === d.target.id) {
+                        d3.select(this).classed('node-highlighted', true);
+                    }
+                });
+
+                // Show tooltip with relationship type
+                const relationshipTypeNames = {
+                    friends: 'Friends',
+                    enemies: 'Enemies/Feud',
+                    romantic: 'Romantic',
+                    complicated: 'Complicated'
+                };
+
+                const tooltip = d3.select('body').append('div')
+                    .attr('class', 'tooltip')
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px')
+                    .html(`<strong>${d.source.id}</strong> ${linkEmojiMap[d.type]} <strong>${d.target.id}</strong><br>${relationshipTypeNames[d.type] || d.type}`);
+            }).on('mouseout', function() {
+                // Remove highlights
+                d3.select(this).select('line.link').classed('link-highlighted', false);
+                node.classed('node-highlighted', false);
+                d3.selectAll('.tooltip').remove();
+            });
 
             // Create nodes
             const node = g.append('g')
@@ -1145,7 +1227,13 @@
                 .attr('class', 'node-label')
                 .attr('dy', 40)
                 .attr('text-anchor', 'middle')
-                .text(d => d.name);
+                .text(d => {
+                    // Add crown emoji if this is the center character
+                    if (d.id === centerCharacter) {
+                        return `👑 ${d.name}`;
+                    }
+                    return d.name;
+                });
 
             // Add tooltips and click interactions
             node.on('mouseover', function(event, d) {
@@ -1204,6 +1292,18 @@
                     .attr('y1', d => d.source.y)
                     .attr('x2', d => d.target.x)
                     .attr('y2', d => d.target.y);
+
+                // Update hover detection line
+                linkHover
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                // Update emoji positions (center of the line)
+                linkEmoji
+                    .attr('x', d => (d.source.x + d.target.x) / 2)
+                    .attr('y', d => (d.source.y + d.target.y) / 2);
 
                 node.attr('transform', d => `translate(${d.x},${d.y})`);
             });
