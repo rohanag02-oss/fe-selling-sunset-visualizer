@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Selling Sunset Relationship Network</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
@@ -46,12 +47,271 @@
             color: var(--text-primary);
             overflow-x: hidden;
             transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body.mobile {
+            /* Mobile-specific optimizations */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
             max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 20px 15px;
+                margin-bottom: 15px;
+            }
+
+            .dark-mode-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 8px 16px;
+                font-size: 18px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 8px;
+                padding: 0 50px 0 10px;
+            }
+
+            .subtitle {
+                font-size: 0.9em;
+                padding: 0 50px 0 10px;
+            }
+
+            .controls {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .control-section {
+                margin-bottom: 15px;
+            }
+
+            .control-section-title {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .season-btn, .center-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+                min-height: 44px;
+                min-width: 44px;
+                touch-action: manipulation;
+            }
+
+            .season-selector {
+                gap: 8px;
+            }
+
+            .center-selector {
+                gap: 6px;
+            }
+
+            .center-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .legend {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .legend-item {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .legend-line {
+                width: 30px;
+                height: 2px;
+            }
+
+            .legend-circle {
+                width: 16px;
+                height: 16px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-title {
+                font-size: 12px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .drama-meter {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .drama-meter-title {
+                font-size: 16px;
+                margin-bottom: 12px;
+            }
+
+            .drama-bar-label {
+                min-width: 100px;
+                font-size: 12px;
+            }
+
+            .drama-bar-wrapper {
+                height: 22px;
+            }
+
+            .drama-bar {
+                font-size: 11px;
+                padding-right: 6px;
+            }
+
+            #graph-container {
+                border-radius: 10px;
+                min-height: 500px;
+            }
+
+            .node-label {
+                font-size: 12px;
+            }
+
+            .crown-emoji {
+                font-size: 20px;
+            }
+
+            .link-emoji {
+                font-size: 14px;
+            }
+
+            .tooltip {
+                font-size: 12px;
+                padding: 10px 12px;
+                max-width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+
+            header {
+                padding: 15px 10px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+                padding: 0 45px 0 5px;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+                padding: 0 45px 0 5px;
+            }
+
+            .dark-mode-toggle {
+                top: 8px;
+                right: 8px;
+                padding: 6px 12px;
+                font-size: 16px;
+            }
+
+            .controls {
+                padding: 12px;
+            }
+
+            .season-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .center-btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            .legend {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .legend-item {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            #graph-container {
+                min-height: 400px;
+            }
+
+            .node-label {
+                font-size: 11px;
+            }
+
+            .crown-emoji {
+                font-size: 18px;
+            }
+
+            .link-emoji {
+                font-size: 12px;
+            }
+        }
+
+        /* Landscape mobile optimization */
+        @media (max-width: 768px) and (orientation: landscape) {
+            #graph-container {
+                min-height: 300px;
+            }
+
+            header {
+                padding: 15px 10px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+            }
+        }
+
+        /* Prevent text selection on mobile for better UX */
+        @media (max-width: 768px) {
+            * {
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            button, .node, .link-group {
+                -webkit-user-select: none;
+                user-select: none;
+            }
+
+            /* Improve touch scrolling */
+            body {
+                -webkit-overflow-scrolling: touch;
+            }
         }
 
         header {
@@ -78,6 +338,11 @@
             font-size: 20px;
             transition: all 0.3s;
             backdrop-filter: blur(10px);
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            min-width: 44px;
+            min-height: 44px;
         }
 
         .dark-mode-toggle:hover {
@@ -133,6 +398,9 @@
             font-weight: 600;
             transition: all 0.3s;
             color: var(--text-primary);
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .season-btn:hover, .center-btn:hover {
@@ -821,27 +1089,84 @@
         let svg;
         let width, height;
         let previousDramaScores = {};
+        let isMobile = false;
+
+        // Mobile detection function
+        function detectMobile() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            const isSmallScreen = window.innerWidth <= 768;
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            isMobile = isMobileDevice || (isSmallScreen && isTouchDevice);
+            
+            if (isMobile) {
+                document.body.classList.add('mobile');
+            }
+            
+            return isMobile;
+        }
+
+        // Optimize graph dimensions for mobile
+        function getGraphDimensions() {
+            const container = document.getElementById('graph-container');
+            const containerWidth = container.clientWidth;
+            
+            if (isMobile) {
+                // Mobile: use container width, adjust height based on orientation
+                const isLandscape = window.innerWidth > window.innerHeight;
+                const heightRatio = isLandscape ? 0.4 : 0.6;
+                return {
+                    width: containerWidth,
+                    height: Math.max(400, window.innerHeight * heightRatio)
+                };
+            } else {
+                // Desktop: standard dimensions
+                return {
+                    width: containerWidth,
+                    height: Math.max(700, window.innerHeight * 0.7)
+                };
+            }
+        }
 
         function initGraph() {
             const container = document.getElementById('graph-container');
-            width = container.clientWidth;
-            height = Math.max(700, window.innerHeight * 0.7);
+            const dimensions = getGraphDimensions();
+            width = dimensions.width;
+            height = dimensions.height;
 
             svg = d3.select('#graph-container')
                 .append('svg')
                 .attr('width', width)
                 .attr('height', height);
 
-            // Add zoom behavior
+            // Add zoom behavior (optimized for mobile)
             const g = svg.append('g');
             
             const zoom = d3.zoom()
-                .scaleExtent([0.5, 3])
+                .scaleExtent(isMobile ? [0.3, 2] : [0.5, 3])
+                .filter(function(event) {
+                    // On mobile, allow pinch-to-zoom and pan
+                    if (isMobile) {
+                        return event.type === 'wheel' || event.type === 'touchstart' || event.type === 'touchmove';
+                    }
+                    // On desktop, allow wheel and drag
+                    return !event.button || event.button === 0;
+                })
                 .on('zoom', (event) => {
                     g.attr('transform', event.transform);
                 });
             
             svg.call(zoom);
+            
+            // On mobile, add touch-friendly panning
+            if (isMobile) {
+                svg.on('touchstart', function() {
+                    d3.select(this).style('cursor', 'grabbing');
+                }).on('touchend', function() {
+                    d3.select(this).style('cursor', 'grab');
+                });
+            }
 
             // Create season buttons
             const seasonSelector = document.getElementById('seasonSelector');
@@ -1161,8 +1486,14 @@
                 .attr('class', 'link-emoji')
                 .text(d => linkEmojiMap[d.type] || '');
 
-            // Add hover effects to links
-            linkGroup.on('mouseover', function(event, d) {
+            // Add hover effects to links (optimized for mobile)
+            const linkInteraction = isMobile ? 'touchstart' : 'mouseover';
+            const linkInteractionEnd = isMobile ? 'touchend' : 'mouseout';
+            
+            linkGroup.on(linkInteraction, function(event, d) {
+                if (isMobile) {
+                    event.preventDefault();
+                }
                 // Highlight the visible link
                 d3.select(this).select('line.link').classed('link-highlighted', true);
                 
@@ -1181,16 +1512,30 @@
                     complicated: 'Complicated'
                 };
 
+                const tooltipX = isMobile ? (event.touches ? event.touches[0].clientX : event.clientX || window.innerWidth / 2) : event.pageX;
+                const tooltipY = isMobile ? (event.touches ? event.touches[0].clientY : event.clientY || window.innerHeight / 2) : event.pageY;
+                
                 const tooltip = d3.select('body').append('div')
                     .attr('class', 'tooltip')
-                    .style('left', (event.pageX + 10) + 'px')
-                    .style('top', (event.pageY - 10) + 'px')
+                    .style('left', (tooltipX + 10) + 'px')
+                    .style('top', (tooltipY - 10) + 'px')
                     .html(`<strong>${d.source.id}</strong> ${linkEmojiMap[d.type]} <strong>${d.target.id}</strong><br>${relationshipTypeNames[d.type] || d.type}`);
-            }).on('mouseout', function() {
-                // Remove highlights
-                d3.select(this).select('line.link').classed('link-highlighted', false);
-                node.classed('node-highlighted', false);
-                d3.selectAll('.tooltip').remove();
+                
+                // On mobile, auto-remove tooltip after 3 seconds
+                if (isMobile) {
+                    setTimeout(() => {
+                        d3.select(this).select('line.link').classed('link-highlighted', false);
+                        node.classed('node-highlighted', false);
+                        d3.selectAll('.tooltip').remove();
+                    }, 3000);
+                }
+            }).on(linkInteractionEnd, function() {
+                if (!isMobile) {
+                    // Remove highlights
+                    d3.select(this).select('line.link').classed('link-highlighted', false);
+                    node.classed('node-highlighted', false);
+                    d3.selectAll('.tooltip').remove();
+                }
             });
 
             // Create nodes
@@ -1251,8 +1596,14 @@
                 .attr('text-anchor', 'middle')
                 .text(d => d.name);
 
-            // Add tooltips and click interactions
-            node.on('mouseover', function(event, d) {
+            // Add tooltips and click interactions (optimized for mobile)
+            const nodeInteraction = isMobile ? 'touchstart' : 'mouseover';
+            const nodeInteractionEnd = isMobile ? 'touchend' : 'mouseout';
+            
+            node.on(nodeInteraction, function(event, d) {
+                if (isMobile) {
+                    event.preventDefault(); // Prevent double-tap zoom on mobile
+                }
                 const personStats = stats[d.name];
                 let tooltipHTML = `<strong>${d.name}</strong>`;
                 
@@ -1275,14 +1626,29 @@
                     tooltipHTML += `<br>🔥 Male-Related Drama: +${personStats.maleInfluence}`;
                 }
                 
+                const tooltipX = isMobile ? (event.touches ? event.touches[0].clientX : event.clientX || window.innerWidth / 2) : event.pageX;
+                const tooltipY = isMobile ? (event.touches ? event.touches[0].clientY : event.clientY || window.innerHeight / 2) : event.pageY;
+                
                 const tooltip = d3.select('body').append('div')
                     .attr('class', 'tooltip')
-                    .style('left', (event.pageX + 10) + 'px')
-                    .style('top', (event.pageY - 10) + 'px')
+                    .style('left', (tooltipX + 10) + 'px')
+                    .style('top', (tooltipY - 10) + 'px')
                     .html(tooltipHTML);
-            }).on('mouseout', function() {
-                d3.selectAll('.tooltip').remove();
+                
+                // On mobile, auto-remove tooltip after 3 seconds
+                if (isMobile) {
+                    setTimeout(() => {
+                        d3.selectAll('.tooltip').remove();
+                    }, 3000);
+                }
+            }).on(nodeInteractionEnd, function() {
+                if (!isMobile) {
+                    d3.selectAll('.tooltip').remove();
+                }
             }).on('click', function(event, d) {
+                if (isMobile) {
+                    event.preventDefault();
+                }
                 // Create emoji burst on click
                 const personStats = stats[d.name];
                 let emoji = '✨';
@@ -1415,19 +1781,52 @@
 
         // Initialize on load
         window.addEventListener('load', () => {
+            // Detect mobile first
+            detectMobile();
+            
             // Check for saved dark mode preference
             if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
-                document.querySelector('.dark-mode-toggle').textContent = '☀️';
+                const darkModeBtn = document.querySelector('.dark-mode-toggle');
+                if (darkModeBtn) {
+                    darkModeBtn.textContent = '☀️';
+                }
             }
+            
             initGraph();
         });
+
+        // Also detect on DOMContentLoaded for faster initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            detectMobile();
+        });
         window.addEventListener('resize', () => {
-            const container = document.getElementById('graph-container');
-            width = container.clientWidth;
-            height = Math.max(700, window.innerHeight * 0.7);
-            svg.attr('width', width).attr('height', height);
-            updateGraph();
+            // Re-detect mobile on resize
+            detectMobile();
+            
+            const dimensions = getGraphDimensions();
+            width = dimensions.width;
+            height = dimensions.height;
+            
+            if (svg) {
+                svg.attr('width', width).attr('height', height);
+                updateGraph();
+            }
+        });
+
+        // Handle orientation change on mobile
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                detectMobile();
+                const dimensions = getGraphDimensions();
+                width = dimensions.width;
+                height = dimensions.height;
+                
+                if (svg) {
+                    svg.attr('width', width).attr('height', height);
+                    updateGraph();
+                }
+            }, 100);
         });
     </script>
 </body>
