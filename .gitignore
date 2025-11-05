@@ -14,3 +14,6 @@ Thumbs.db
 
 # Temporary files
 *.tmp
+
+# Nested directory (prevents submodule issues)
+fe-selling-sunset-visualizer/
