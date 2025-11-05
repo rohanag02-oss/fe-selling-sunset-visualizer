@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selling Sunset Relationship Network</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-card: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --header-bg: rgba(0, 0, 0, 0.2);
+            --legend-bg: #f8f9fa;
+            --stat-bg-1: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --node-default: #667eea;
+            --tooltip-bg: rgba(0, 0, 0, 0.9);
+            --tooltip-text: white;
+        }
+
+        body.dark-mode {
+            --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --bg-card: #2d2d44;
+            --text-primary: #e4e4e4;
+            --text-secondary: #b0b0b0;
+            --card-shadow: rgba(0, 0, 0, 0.5);
+            --header-bg: rgba(0, 0, 0, 0.4);
+            --legend-bg: #3a3a52;
+            --stat-bg-1: linear-gradient(135deg, #3a3a52 0%, #2d2d44 100%);
+            --node-default: #8b9cff;
+            --tooltip-bg: rgba(255, 255, 255, 0.95);
+            --tooltip-text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 30px 20px;
+            background: var(--header-bg);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .dark-mode-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px var(--card-shadow);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .season-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .season-btn, .center-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: var(--legend-bg);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: var(--text-primary);
+        }
+
+        .season-btn:hover, .center-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.8;
+        }
+
+        .season-btn.active, .center-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .center-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .center-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--legend-bg);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-line {
+            width: 40px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid #333;
+        }
+
+        #graph-container {
+            background: var(--bg-card);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px var(--card-shadow);
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .node:hover {
+            filter: brightness(1.2);
+        }
+
+        .node-label {
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px var(--bg-card), -1px -1px 2px var(--bg-card), 1px -1px 2px var(--bg-card), -1px 1px 2px var(--bg-card);
+        }
+
+        .link {
+            stroke-opacity: 0.6;
+            transition: stroke-opacity 0.3s;
+        }
+
+        .link:hover {
+            stroke-opacity: 1;
+            stroke-width: 4px !important;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--stat-bg-1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--card-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .tooltip {
+            position: absolute;
+            background: var(--tooltip-bg);
+            color: var(--tooltip-text);
+            padding: 12px 16px;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .highlight-drama {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.8));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 1));
+            }
+        }
+
+        .highlight-neutral {
+            filter: drop-shadow(0 0 8px rgba(100, 200, 100, 0.8));
+        }
+
+        .highlight-popular {
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+        }
+
+        .drama-indicator {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        .drama-meter {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px var(--card-shadow);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .drama-meter-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .drama-bars {
+            display: grid;
+            gap: 10px;
+        }
+
+        .drama-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drama-bar-label {
+            min-width: 120px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .drama-bar-wrapper {
+            flex: 1;
+            background: var(--legend-bg);
+            height: 25px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .drama-bar {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 1s ease-out, background 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .drama-bar.increasing {
+            animation: barPulse 0.5s ease-in-out;
+        }
+
+        .drama-bar.decreasing {
+            animation: barShrink 0.5s ease-in-out;
+        }
+
+        @keyframes barPulse {
+            0%, 100% {
+                transform: scaleY(1);
+            }
+            50% {
+                transform: scaleY(1.2);
+            }
+        }
+
+        @keyframes barShrink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .emoji-burst {
+            position: absolute;
+            font-size: 30px;
+            pointer-events: none;
+            animation: emojiFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes emojiFloat {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) rotate(360deg) scale(0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+            <h1>🏡✨ Selling Sunset Relationship Network 💎🔥</h1>
+            <p class="subtitle">👀 Explore the dramatic relationships across all seasons 🍷💅</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-section">
+                <div class="control-section-title">📺 Select Season</div>
+                <div class="season-selector" id="seasonSelector"></div>
+            </div>
+
+            <div class="control-section">
+                <div class="control-section-title">🎯 Center Character (Optional)</div>
+                <div class="center-selector" id="centerSelector"></div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #4CAF50;"></div>
+                    <span>👭 Friends</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #FF1744;"></div>
+                    <span>⚔️ Enemies/Feud</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #FF69B4;"></div>
+                    <span>💕 Romantic</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #FFC107;"></div>
+                    <span>🤔 Complicated</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="border-color: #9C27B0; border-width: 4px;"></div>
+                    <span>🎯 Center Character</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="border-color: #2196F3;"></div>
+                    <span>👨 Male Characters</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="border-color: #ff0000; animation: pulse 2s infinite;"></div>
+                    <span>🔥 Most Drama</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="border-color: #64c864;"></div>
+                    <span>😌 Most Neutral</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-circle" style="border-color: #ffd700;"></div>
+                    <span>⭐ Most Friends</span>
+                </div>
+            </div>
+
+            <div class="stats" id="statsContainer"></div>
+        </div>
+
+        <div class="drama-meter">
+            <div class="drama-meter-title">📊 Top 5 Drama Scores This Season</div>
+            <div class="drama-bars" id="dramaBars"></div>
+        </div>
+
+        <div id="graph-container"></div>
+    </div>
+
+    <script>
+        // Comprehensive relationship data for all seasons (Chrishell-centric)
+        const seasonData = {
+            1: {
+                cast: ["Chrishell", "Mary", "Christine", "Maya", "Heather", "Davina", "Amanza", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell's relationships
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Maya", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Christine", type: "complicated" },
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    { source: "Chrishell", target: "Brett", type: "friends" },
+                    
+                    // Other key relationships
+                    { source: "Mary", target: "Christine", type: "friends" },
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Jason", type: "friends" },
+                    { source: "Christine", target: "Davina", type: "friends" },
+                    { source: "Heather", target: "Maya", type: "friends" },
+                    { source: "Amanza", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                ]
+            },
+            2: {
+                cast: ["Chrishell", "Mary", "Christine", "Maya", "Heather", "Davina", "Amanza", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell's relationships (divorce drama this season)
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Maya", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Christine", type: "enemies" },
+                    { source: "Chrishell", target: "Davina", type: "enemies" },
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    { source: "Chrishell", target: "Brett", type: "friends" },
+                    
+                    // Christine's drama increases due to comments about Chrishell's divorce
+                    { source: "Christine", target: "Davina", type: "friends" },
+                    { source: "Christine", target: "Mary", type: "complicated" },
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Heather", target: "Maya", type: "friends" },
+                    { source: "Amanza", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    { source: "Jason", target: "Mary", type: "friends" },
+                ]
+            },
+            3: {
+                cast: ["Chrishell", "Mary", "Christine", "Maya", "Heather", "Davina", "Amanza", "Vanessa", "Jason", "Brett", "Romain"],
+                relationships: [
+                    // Chrishell's relationships
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Maya", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Christine", type: "enemies" },
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    
+                    // Mary & Romain wedding drama creates tension
+                    { source: "Mary", target: "Romain", type: "romantic" },
+                    { source: "Mary", target: "Christine", type: "enemies" },
+                    { source: "Christine", target: "Romain", type: "enemies" },
+                    
+                    // Christine's drama escalates
+                    { source: "Christine", target: "Davina", type: "friends" },
+                    { source: "Christine", target: "Heather", type: "enemies" },
+                    { source: "Christine", target: "Vanessa", type: "friends" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Maya", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Davina", target: "Chrishell", type: "enemies" },
+                    { source: "Davina", target: "Mary", type: "complicated" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                ]
+            },
+            4: {
+                cast: ["Chrishell", "Mary", "Christine", "Heather", "Amanza", "Vanessa", "Emma", "Jason", "Brett", "Tarek"],
+                relationships: [
+                    // Chrishell's relationships
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Christine", type: "enemies" },
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    
+                    // Heather & Tarek relationship adds to drama
+                    { source: "Heather", target: "Tarek", type: "romantic" },
+                    { source: "Tarek", target: "Emma", type: "complicated" }, // Past relationship creates tension
+                    
+                    // Emma-Christine feud (most dramatic)
+                    { source: "Emma", target: "Christine", type: "enemies" },
+                    { source: "Christine", target: "Heather", type: "enemies" },
+                    
+                    // Christine's isolation increases drama
+                    { source: "Christine", target: "Vanessa", type: "friends" },
+                    { source: "Christine", target: "Mary", type: "enemies" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Vanessa", target: "Emma", type: "complicated" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                ]
+            },
+            5: {
+                cast: ["Chrishell", "Mary", "Christine", "Heather", "Amanza", "Vanessa", "Emma", "Chelsea", "Jason", "Brett", "Tarek"],
+                relationships: [
+                    // MAJOR: Chrishell & Jason start dating (creates massive drama)
+                    { source: "Chrishell", target: "Jason", type: "romantic" },
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Chelsea", type: "friends" },
+                    { source: "Chrishell", target: "Christine", type: "enemies" },
+                    
+                    // Jason's relationship with Chrishell affects office dynamics
+                    { source: "Jason", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    
+                    // Christine's drama peaks (this increases her drama score significantly)
+                    { source: "Christine", target: "Vanessa", type: "friends" },
+                    { source: "Christine", target: "Mary", type: "enemies" },
+                    { source: "Christine", target: "Emma", type: "enemies" },
+                    { source: "Christine", target: "Chelsea", type: "enemies" },
+                    
+                    // Heather-Tarek continues
+                    { source: "Heather", target: "Tarek", type: "romantic" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Mary", target: "Emma", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Emma", target: "Chelsea", type: "friends" },
+                ]
+            },
+            6: {
+                cast: ["Chrishell", "Mary", "Heather", "Amanza", "Emma", "Chelsea", "Bre", "Nicole", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell & Jason breakup aftermath (complicated relationship now)
+                    { source: "Chrishell", target: "Jason", type: "complicated" },
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Nicole", type: "enemies" },
+                    
+                    // Nicole's arrival creates drama for Chrishell
+                    { source: "Nicole", target: "Bre", type: "friends" },
+                    { source: "Nicole", target: "Emma", type: "complicated" },
+                    
+                    // Jason post-breakup relationships
+                    { source: "Jason", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Mary", target: "Emma", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Emma", target: "Chelsea", type: "friends" },
+                    { source: "Chelsea", target: "Chrishell", type: "friends" },
+                    { source: "Chelsea", target: "Bre", type: "friends" },
+                    { source: "Bre", target: "Emma", type: "friends" },
+                ]
+            },
+            7: {
+                cast: ["Chrishell", "Mary", "Heather", "Amanza", "Emma", "Chelsea", "Bre", "Nicole", "Alanna", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell's relationships (drama increases)
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Nicole", type: "enemies" },
+                    { source: "Chrishell", target: "Chelsea", type: "complicated" },
+                    { source: "Chrishell", target: "Jason", type: "friends" }, // Moved back to friends
+                    
+                    // Nicole's drama with Mary escalates
+                    { source: "Nicole", target: "Mary", type: "enemies" },
+                    { source: "Nicole", target: "Bre", type: "friends" },
+                    { source: "Nicole", target: "Alanna", type: "friends" },
+                    
+                    // Chelsea's complicated relationships
+                    { source: "Chelsea", target: "Emma", type: "complicated" },
+                    { source: "Chelsea", target: "Bre", type: "friends" },
+                    
+                    // Jason's presence still affects dynamics
+                    { source: "Jason", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Bre", target: "Emma", type: "friends" },
+                ]
+            },
+            8: {
+                cast: ["Chrishell", "Mary", "Heather", "Amanza", "Emma", "Chelsea", "Bre", "Nicole", "Alanna", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell's relationships (peak drama with Chelsea)
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Nicole", type: "enemies" },
+                    { source: "Chrishell", target: "Chelsea", type: "enemies" }, // Major feud
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    
+                    // Emma-Chelsea feud intensifies
+                    { source: "Emma", target: "Chelsea", type: "enemies" },
+                    
+                    // Nicole-Mary feud continues
+                    { source: "Nicole", target: "Mary", type: "enemies" },
+                    { source: "Nicole", target: "Bre", type: "friends" },
+                    { source: "Nicole", target: "Alanna", type: "friends" },
+                    
+                    // Chelsea's alliance
+                    { source: "Chelsea", target: "Bre", type: "friends" },
+                    
+                    // Jason navigating post-Chrishell office dynamics
+                    { source: "Jason", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    { source: "Jason", target: "Emma", type: "friends" },
+                    
+                    // Other relationships
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Bre", target: "Alanna", type: "friends" },
+                ]
+            },
+            9: {
+                cast: ["Chrishell", "Mary", "Heather", "Amanza", "Emma", "Chelsea", "Bre", "Nicole", "Alanna", "Jason", "Brett"],
+                relationships: [
+                    // Chrishell's relationships (continued drama)
+                    { source: "Chrishell", target: "Mary", type: "friends" },
+                    { source: "Chrishell", target: "Heather", type: "friends" },
+                    { source: "Chrishell", target: "Amanza", type: "friends" },
+                    { source: "Chrishell", target: "Emma", type: "friends" },
+                    { source: "Chrishell", target: "Nicole", type: "enemies" },
+                    { source: "Chrishell", target: "Chelsea", type: "enemies" },
+                    { source: "Chrishell", target: "Jason", type: "friends" },
+                    
+                    // Emma-Chelsea feud persists
+                    { source: "Emma", target: "Chelsea", type: "enemies" },
+                    
+                    // Nicole-Mary feud continues
+                    { source: "Nicole", target: "Mary", type: "enemies" },
+                    { source: "Nicole", target: "Bre", type: "friends" },
+                    { source: "Nicole", target: "Alanna", type: "friends" },
+                    { source: "Nicole", target: "Chelsea", type: "friends" },
+                    
+                    // Chelsea's alliances
+                    { source: "Chelsea", target: "Bre", type: "friends" },
+                    
+                    // Jason maintaining friendships
+                    { source: "Jason", target: "Mary", type: "friends" },
+                    { source: "Jason", target: "Brett", type: "friends" },
+                    { source: "Jason", target: "Emma", type: "friends" },
+                    { source: "Jason", target: "Heather", type: "friends" },
+                    
+                    // Core friendships remain strong
+                    { source: "Mary", target: "Heather", type: "friends" },
+                    { source: "Mary", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Amanza", type: "friends" },
+                    { source: "Heather", target: "Emma", type: "friends" },
+                    { source: "Emma", target: "Amanza", type: "friends" },
+                    { source: "Bre", target: "Alanna", type: "friends" },
+                ]
+            }
+        };
+
+        const relationshipColors = {
+            friends: "#4CAF50",
+            enemies: "#FF1744",
+            romantic: "#FF69B4",
+            complicated: "#FFC107"
+        };
+
+        let currentSeason = 1;
+        let previousSeason = null;
+        let centerCharacter = null; // null means no center, use original logic
+        let simulation;
+        let svg;
+        let width, height;
+        let previousDramaScores = {};
+
+        function initGraph() {
+            const container = document.getElementById('graph-container');
+            width = container.clientWidth;
+            height = Math.max(700, window.innerHeight * 0.7);
+
+            svg = d3.select('#graph-container')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Add zoom behavior
+            const g = svg.append('g');
+            
+            const zoom = d3.zoom()
+                .scaleExtent([0.5, 3])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+            
+            svg.call(zoom);
+
+            // Create season buttons
+            const seasonSelector = document.getElementById('seasonSelector');
+            for (let i = 1; i <= 9; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'season-btn' + (i === 1 ? ' active' : '');
+                btn.textContent = `Season ${i}`;
+                btn.onclick = () => changeSeason(i);
+                seasonSelector.appendChild(btn);
+            }
+
+            updateGraph();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.dark-mode-toggle');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            
+            // Save preference
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        function updateCenterSelector(cast) {
+            const centerSelector = document.getElementById('centerSelector');
+            centerSelector.innerHTML = '';
+            
+            // Add "None" button
+            const noneBtn = document.createElement('button');
+            noneBtn.className = 'center-btn' + (centerCharacter === null ? ' active' : '');
+            noneBtn.textContent = '❌ None';
+            noneBtn.onclick = () => setCenterCharacter(null);
+            centerSelector.appendChild(noneBtn);
+            
+            // Add button for each cast member
+            cast.forEach(member => {
+                const btn = document.createElement('button');
+                btn.className = 'center-btn' + (centerCharacter === member ? ' active' : '');
+                btn.textContent = member === 'Chrishell' ? `👑 ${member}` : member;
+                btn.onclick = () => setCenterCharacter(member);
+                centerSelector.appendChild(btn);
+            });
+        }
+
+        function setCenterCharacter(character) {
+            centerCharacter = character;
+            document.querySelectorAll('.center-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateGraph();
+        }
+
+        function changeSeason(season) {
+            previousSeason = currentSeason;
+            currentSeason = season;
+            document.querySelectorAll('.season-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx + 1 === season);
+            });
+            updateGraph();
+        }
+
+        function createEmojiBurst(x, y, emoji, count = 5) {
+            for (let i = 0; i < count; i++) {
+                const emojiEl = document.createElement('div');
+                emojiEl.className = 'emoji-burst';
+                emojiEl.textContent = emoji;
+                emojiEl.style.left = x + 'px';
+                emojiEl.style.top = y + 'px';
+                
+                const angle = (Math.PI * 2 * i) / count;
+                const distance = 50 + Math.random() * 50;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                emojiEl.style.setProperty('--tx', tx + 'px');
+                emojiEl.style.setProperty('--ty', ty + 'px');
+                
+                document.body.appendChild(emojiEl);
+                
+                setTimeout(() => emojiEl.remove(), 1500);
+            }
+        }
+
+        function showDramaChange(name, oldScore, newScore, x, y) {
+            const change = newScore - oldScore;
+            if (change === 0) return;
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'drama-indicator';
+            
+            let emoji = '';
+            let color = '';
+            
+            if (change > 0) {
+                emoji = change >= 5 ? '🔥💥' : change >= 3 ? '🔥' : '⚠️';
+                color = '#ff1744';
+                indicator.textContent = `${emoji} +${change}`;
+            } else {
+                emoji = Math.abs(change) >= 3 ? '😌✨' : '😊';
+                color = '#4CAF50';
+                indicator.textContent = `${emoji} ${change}`;
+            }
+            
+            indicator.style.color = color;
+            indicator.style.left = x + 'px';
+            indicator.style.top = y + 'px';
+            
+            document.body.appendChild(indicator);
+            
+            // Create emoji burst
+            const burstEmoji = change > 0 ? '🔥' : '✨';
+            createEmojiBurst(x, y, burstEmoji, Math.min(Math.abs(change), 8));
+            
+            setTimeout(() => indicator.remove(), 2000);
+        }
+
+        function calculateStats(data) {
+            const stats = {};
+            const maleCharacters = ["Jason", "Brett", "Romain", "Tarek"];
+            
+            data.cast.forEach(person => {
+                stats[person] = {
+                    friends: 0,
+                    enemies: 0,
+                    total: 0,
+                    drama: 0,
+                    romanticConnections: 0,
+                    maleInfluence: 0,
+                    isMale: maleCharacters.includes(person)
+                };
+            });
+
+            data.relationships.forEach(rel => {
+                stats[rel.source].total++;
+                stats[rel.target].total++;
+
+                // Track romantic connections
+                if (rel.type === 'romantic') {
+                    stats[rel.source].romanticConnections++;
+                    stats[rel.target].romanticConnections++;
+                    // Romantic relationships with male characters increase drama for female characters
+                    if (maleCharacters.includes(rel.source)) {
+                        stats[rel.target].maleInfluence += 3;
+                        stats[rel.target].drama += 2; // Romance with boss/colleague adds drama
+                    }
+                    if (maleCharacters.includes(rel.target)) {
+                        stats[rel.source].maleInfluence += 3;
+                        stats[rel.source].drama += 2;
+                    }
+                }
+
+                if (rel.type === 'friends') {
+                    stats[rel.source].friends++;
+                    stats[rel.target].friends++;
+                } else if (rel.type === 'enemies') {
+                    stats[rel.source].enemies++;
+                    stats[rel.target].enemies++;
+                    stats[rel.source].drama += 3; // Increased from 2
+                    stats[rel.target].drama += 3;
+                    
+                    // Extra drama if feud involves someone connected to a male character
+                    if (stats[rel.source].romanticConnections > 0) {
+                        stats[rel.source].drama += 1;
+                    }
+                    if (stats[rel.target].romanticConnections > 0) {
+                        stats[rel.target].drama += 1;
+                    }
+                } else if (rel.type === 'complicated') {
+                    stats[rel.source].drama += 2; // Increased from 1
+                    stats[rel.target].drama += 2;
+                    
+                    // Complicated relationships involving male characters add extra drama
+                    if (maleCharacters.includes(rel.source) || maleCharacters.includes(rel.target)) {
+                        stats[rel.source].drama += 1;
+                        stats[rel.target].drama += 1;
+                    }
+                }
+            });
+
+            // Find extremes (excluding male characters from drama/neutral calculations)
+            const femaleStats = Object.entries(stats).filter(([name, _]) => !maleCharacters.includes(name));
+            
+            const mostDrama = femaleStats.reduce((a, b) => a[1].drama > b[1].drama ? a : b);
+            const mostFriends = femaleStats.reduce((a, b) => a[1].friends > b[1].friends ? a : b);
+            const mostNeutral = femaleStats.reduce((a, b) => 
+                (a[1].drama < b[1].drama || (a[1].drama === b[1].drama && a[1].enemies < b[1].enemies)) ? a : b
+            );
+
+            return { stats, mostDrama, mostFriends, mostNeutral };
+        }
+
+        function updateGraph() {
+            const data = seasonData[currentSeason];
+            const { stats, mostDrama, mostFriends, mostNeutral } = calculateStats(data);
+
+            // Update center character selector
+            updateCenterSelector(data.cast);
+
+            // Update stats display
+            const statsContainer = document.getElementById('statsContainer');
+            
+            let dramaChangeText = '';
+            if (previousSeason && previousDramaScores[mostDrama[0]]) {
+                const change = mostDrama[1].drama - previousDramaScores[mostDrama[0]];
+                if (change > 0) {
+                    dramaChangeText = ` 📈 +${change}`;
+                } else if (change < 0) {
+                    dramaChangeText = ` 📉 ${change}`;
+                }
+            }
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">
+                    <div class="stat-title" style="color: white;">🔥 Most Drama</div>
+                    <div class="stat-value" style="color: white;">${mostDrama[0]} (${mostDrama[1].drama} points${dramaChangeText})</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);">
+                    <div class="stat-title" style="color: white;">👥 Most Friends</div>
+                    <div class="stat-value" style="color: white;">${mostFriends[0]} (${mostFriends[1].friends} friends)</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #74c0fc 0%, #4dabf7 100%);">
+                    <div class="stat-title" style="color: white;">😌 Most Neutral</div>
+                    <div class="stat-value" style="color: white;">${mostNeutral[0]} (${mostNeutral[1].drama} points)</div>
+                </div>
+            `;
+
+            // Update drama bars with animation
+            updateDramaBars(stats);
+
+            // Update drama bars with animation
+            updateDramaBars(stats);
+
+            // Prepare graph data
+            const maleCharacters = ["Jason", "Brett", "Romain", "Tarek"];
+            const nodes = data.cast.map(name => ({
+                id: name,
+                name: name,
+                isDrama: name === mostDrama[0],
+                isFriends: name === mostFriends[0],
+                isNeutral: name === mostNeutral[0],
+                isMale: maleCharacters.includes(name)
+            }));
+
+            const links = data.relationships.map(rel => ({
+                source: rel.source,
+                target: rel.target,
+                type: rel.type
+            }));
+
+            // Clear previous graph
+            svg.selectAll('g').remove();
+            const g = svg.append('g');
+
+            // Create force simulation
+            simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(d => {
+                        // If there's a center character, adjust distances accordingly
+                        if (centerCharacter) {
+                            if (d.source.id === centerCharacter || d.target.id === centerCharacter) {
+                                return d.type === 'enemies' ? 150 : 100;
+                            }
+                        }
+                        return d.type === 'enemies' ? 200 : 120;
+                    }))
+                .force('charge', d3.forceManyBody().strength(d => {
+                    // Stronger attraction to center for center character
+                    if (centerCharacter && d.id === centerCharacter) {
+                        return -800;
+                    }
+                    return -400;
+                }))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => {
+                    if (centerCharacter && d.id === centerCharacter) return 60;
+                    return 50;
+                }))
+                .force('radial', d3.forceRadial(d => {
+                    // Keep center character near center if one is selected
+                    if (centerCharacter && d.id === centerCharacter) return 0;
+                    return centerCharacter ? 150 : 200; // Tighter circle if there's a center
+                }, width / 2, height / 2).strength(centerCharacter ? 0.1 : 0.05));
+
+            // Create links
+            const link = g.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter()
+                .append('line')
+                .attr('class', 'link')
+                .attr('stroke', d => relationshipColors[d.type])
+                .attr('stroke-width', d => d.type === 'enemies' ? 3 : 2)
+                .attr('stroke-dasharray', d => d.type === 'complicated' ? '5,5' : '0');
+
+            // Create nodes
+            const node = g.append('g')
+                .selectAll('g')
+                .data(nodes)
+                .enter()
+                .append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Add circles
+            node.append('circle')
+                .attr('r', d => {
+                    if (d.id === centerCharacter) return 35; // Center character is larger
+                    if (d.isMale) return 22; // Male characters slightly smaller
+                    return 25; // Regular female characters
+                })
+                .attr('fill', d => {
+                    if (d.id === centerCharacter) return '#9C27B0'; // Purple for center character
+                    if (d.isMale) return '#2196F3'; // Blue for male characters
+                    if (d.isDrama) return '#ff1744';
+                    if (d.isNeutral) return '#64c864';
+                    if (d.isFriends) return '#ffd700';
+                    return '#667eea';
+                })
+                .attr('stroke', d => {
+                    if (d.id === centerCharacter) return '#fff';
+                    if (d.isMale) return '#fff';
+                    return '#fff';
+                })
+                .attr('stroke-width', d => d.id === centerCharacter ? 4 : 3)
+                .attr('class', d => {
+                    if (d.id === centerCharacter) return 'highlight-popular'; // Give center character a glow
+                    if (d.isDrama) return 'highlight-drama';
+                    if (d.isNeutral) return 'highlight-neutral';
+                    if (d.isFriends) return 'highlight-popular';
+                    return '';
+                });
+
+            // Add labels
+            node.append('text')
+                .attr('class', 'node-label')
+                .attr('dy', 40)
+                .attr('text-anchor', 'middle')
+                .text(d => d.name);
+
+            // Add tooltips and click interactions
+            node.on('mouseover', function(event, d) {
+                const personStats = stats[d.name];
+                let tooltipHTML = `<strong>${d.name}</strong>`;
+                
+                if (d.id === centerCharacter) {
+                    tooltipHTML += ` 🎯 (Center Character)`;
+                }
+                if (personStats.isMale) {
+                    tooltipHTML += ` 👨 (Male Character)`;
+                }
+                
+                tooltipHTML += `<br>👥 Friends: ${personStats.friends}<br>`;
+                tooltipHTML += `⚔️ Enemies: ${personStats.enemies}<br>`;
+                tooltipHTML += `🔥 Drama Score: ${personStats.drama}`;
+                
+                if (personStats.romanticConnections > 0) {
+                    tooltipHTML += `<br>💕 Romantic Connections: ${personStats.romanticConnections}`;
+                }
+                
+                if (personStats.maleInfluence > 0 && !personStats.isMale) {
+                    tooltipHTML += `<br>🔥 Male-Related Drama: +${personStats.maleInfluence}`;
+                }
+                
+                const tooltip = d3.select('body').append('div')
+                    .attr('class', 'tooltip')
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px')
+                    .html(tooltipHTML);
+            }).on('mouseout', function() {
+                d3.selectAll('.tooltip').remove();
+            }).on('click', function(event, d) {
+                // Create emoji burst on click
+                const personStats = stats[d.name];
+                let emoji = '✨';
+                
+                if (personStats.drama >= 8) {
+                    emoji = '🔥';
+                } else if (personStats.romanticConnections > 0) {
+                    emoji = '💕';
+                } else if (personStats.friends >= 5) {
+                    emoji = '⭐';
+                } else if (personStats.enemies >= 2) {
+                    emoji = '⚔️';
+                }
+                
+                const rect = this.getBoundingClientRect();
+                createEmojiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, emoji, 8);
+            });
+
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+
+            // Show drama changes with animations after nodes are positioned
+            if (previousSeason !== null && Object.keys(previousDramaScores).length > 0) {
+                setTimeout(() => {
+                    node.each(function(d) {
+                        if (previousDramaScores[d.name] !== undefined) {
+                            const oldScore = previousDramaScores[d.name];
+                            const newScore = stats[d.name].drama;
+                            if (oldScore !== newScore) {
+                                const rect = this.getBoundingClientRect();
+                                showDramaChange(d.name, oldScore, newScore, rect.left + rect.width / 2, rect.top);
+                            }
+                        }
+                    });
+                }, 1000);
+            }
+
+            // Store current drama scores for next season comparison
+            previousDramaScores = {};
+            Object.keys(stats).forEach(name => {
+                previousDramaScores[name] = stats[name].drama;
+            });
+        }
+
+        function updateDramaBars(stats) {
+            const maleCharacters = ["Jason", "Brett", "Romain", "Tarek"];
+            const femaleStats = Object.entries(stats)
+                .filter(([name, _]) => !maleCharacters.includes(name))
+                .sort((a, b) => b[1].drama - a[1].drama)
+                .slice(0, 5);
+
+            const maxDrama = Math.max(...femaleStats.map(([_, s]) => s.drama), 1);
+            
+            const dramaBars = document.getElementById('dramaBars');
+            dramaBars.innerHTML = '';
+
+            femaleStats.forEach(([name, stat], index) => {
+                const percentage = (stat.drama / maxDrama) * 100;
+                
+                let emoji = '';
+                if (index === 0) emoji = '🔥';
+                else if (stat.drama >= 8) emoji = '💥';
+                else if (stat.drama >= 5) emoji = '⚠️';
+                else if (stat.drama >= 3) emoji = '😬';
+                else emoji = '😊';
+
+                const barContainer = document.createElement('div');
+                barContainer.className = 'drama-bar-container';
+                
+                const oldScore = previousDramaScores[name] || 0;
+                const isIncreasing = stat.drama > oldScore;
+                const isDecreasing = stat.drama < oldScore;
+                
+                let barColor = '#667eea';
+                if (stat.drama >= 10) barColor = '#ff1744';
+                else if (stat.drama >= 7) barColor = '#ff6b6b';
+                else if (stat.drama >= 4) barColor = '#FFC107';
+                else barColor = '#4CAF50';
+
+                barContainer.innerHTML = `
+                    <div class="drama-bar-label">${emoji} ${name}</div>
+                    <div class="drama-bar-wrapper">
+                        <div class="drama-bar ${isIncreasing ? 'increasing' : ''} ${isDecreasing ? 'decreasing' : ''}" 
+                             style="width: ${percentage}%; background: ${barColor};">
+                            ${stat.drama}
+                        </div>
+                    </div>
+                `;
+                
+                dramaBars.appendChild(barContainer);
+            });
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Check for saved dark mode preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.dark-mode-toggle').textContent = '☀️';
+            }
+            initGraph();
+        });
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('graph-container');
+            width = container.clientWidth;
+            height = Math.max(700, window.innerHeight * 0.7);
+            svg.attr('width', width).attr('height', height);
+            updateGraph();
+        });
+    </script>
+</body>
+</html>
